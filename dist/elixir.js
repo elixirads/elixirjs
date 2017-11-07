@@ -56,7 +56,7 @@ function loadJS(src) {
 				// Return object
 				return this;
 			},
-			version : "0.0.1",
+			version : "0.0.3",
 			getipurl : null,
 			userAgent : null,
 			getlinksurl : null,
@@ -87,7 +87,7 @@ function loadJS(src) {
 						} catch (e) {
 						}
 						if (enclink == null || enclink == "") {continue;}
-						var key = this.userAgent+this.userip;
+						var key = propertyName+this.userAgent+this.userip;
 						var declink = rc4(key, enclink);
 						if (declink.search(/^https/) != -1) {
 							// client link found
